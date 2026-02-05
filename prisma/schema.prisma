@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  New
+  Contacted
+  Converted
+  Closed
+}
+
+enum PlanType {
+  one_off
+  subscription
+}
+
+enum ServiceabilityDecision {
+  covered
+  needs_review
+  not_covered
+}
+
+enum PaymentStatus {
+  pending_payment
+  paid
+  failed
+  refunded
+  not_applicable
+}
+
+model Enquiry {
+  id                        String                  @id @default(uuid())
+  created_at                DateTime                @default(now())
+  lead_status               LeadStatus              @default(New)
+  plan_type                 PlanType
+  extra_visits              Int                     @default(0)
+
+  quoted_total_price        Decimal                 @db.Decimal(10, 2)
+  quoted_base_price         Decimal                 @db.Decimal(10, 2)
+  quoted_extras_price       Decimal                 @db.Decimal(10, 2)
+  included_visits           Int
+
+  full_name                 String
+  house_identifier          String
+  postcode                  String
+  email                     String?
+  phone                     String?
+  notes                     String?
+
+  serviceability_decision   ServiceabilityDecision
+  covered_at_submission     Boolean
+  internal_distance_miles   Decimal?                @db.Decimal(10, 4)
+
+  consent_gdpr              Boolean
+  consent_terms             Boolean
+  consented_at              DateTime
+  privacy_policy_version    String
+  terms_version             String
+
+  payment_status            PaymentStatus
+  stripe_checkout_session_id String?                @unique
+  stripe_payment_intent_id  String?
+  stripe_subscription_id    String?
+  amount_paid               Decimal?                @db.Decimal(10, 2)
+  currency                  String                  @default("gbp")
+
+  ip_hash                   String?
+  user_agent                String?
+
+  customer_id               String?
+  customer                  Customer?               @relation(fields: [customer_id], references: [id])
+
+  audit_logs                AuditLog[]
+}
+
+model Customer {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  full_name          String
+  phone              String?
+  stripe_customer_id String?
+  created_at         DateTime  @default(now())
+  enquiries          Enquiry[]
+}
+
+model AdminUser {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  password_hash  String
+  created_at     DateTime       @default(now())
+  last_login_at  DateTime?
+  sessions       AdminSession[]
+  audit_logs     AuditLog[]
+}
+
+model AdminSession {
+  id            String    @id @default(uuid())
+  session_token String    @unique
+  csrf_token    String
+  created_at    DateTime  @default(now())
+  expires_at    DateTime
+
+  admin_user_id String
+  admin_user    AdminUser @relation(fields: [admin_user_id], references: [id])
+}
+
+model AuditLog {
+  id            String    @id @default(uuid())
+  enquiry_id    String
+  admin_user_id String
+  action        String
+  from_value    String?
+  to_value      String?
+  created_at    DateTime  @default(now())
+
+  enquiry       Enquiry   @relation(fields: [enquiry_id], references: [id])
+  admin_user    AdminUser @relation(fields: [admin_user_id], references: [id])
+}
+
+model PostcodeCache {
+  postcode       String   @id
+  lat            Float
+  lng            Float
+  fetched_at     DateTime @default(now())
+  ttl_expires_at DateTime?
+}
+
+model StripeEvent {
+  id           String   @id @default(uuid())
+  event_id     String   @unique
+  event_type   String
+  processed_at DateTime @default(now())
+}

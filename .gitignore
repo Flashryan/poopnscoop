@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env
+.env.*
+.DS_Store
+*.log
+npm-debug.log*
+.yarn/
+.pnp.*
+.vercel/
+.prisma/
+.codex/

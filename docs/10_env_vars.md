@@ -1,0 +1,31 @@
+# Environment Variables
+
+## Required (core)
+DATABASE_URL=
+SESSION_SECRET=
+ANCHOR_LAT=
+ANCHOR_LNG=
+COVERAGE_RADIUS_MILES=10
+NEEDS_REVIEW_THRESHOLD_MILES=8
+TURNSTILE_SITEKEY=
+TURNSTILE_SECRET=
+PRIVACY_POLICY_VERSION=v1.0
+TERMS_VERSION=v1.0
+BUSINESS_NOTIFY_EMAIL=
+EMAIL_FROM=
+APP_URL=https://poopnscoop.co.uk
+
+## Email provider (choose one)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+
+or:
+RESEND_API_KEY=
+
+## Stripe (REQUIRED)
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_ONE_OFF=          # Price ID for £15 one-off (one-time)
+STRIPE_PRICE_SUBSCRIPTION=     # Price ID for £30/month subscription (recurring monthly)
