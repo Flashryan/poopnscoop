@@ -1,20 +1,25 @@
 import QuoteFlow from "@/components/QuoteFlow";
-import { getPublicEnv } from "@/lib/env";
+
+// Use process.env directly to avoid validation timeout during static build
+const APP_URL = process.env.APP_URL || "https://poopnscoop.co.uk";
+const ANCHOR_LAT = parseFloat(process.env.ANCHOR_LAT || "52.5862");
+const ANCHOR_LNG = parseFloat(process.env.ANCHOR_LNG || "-2.1279");
+const TURNSTILE_SITEKEY = process.env.TURNSTILE_SITEKEY || "";
+const PRIVACY_POLICY_VERSION = process.env.PRIVACY_POLICY_VERSION || "1.0";
+const TERMS_VERSION = process.env.TERMS_VERSION || "1.0";
 
 export default function HomePage() {
-  const env = getPublicEnv();
-
   const schema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "Poop n Scoop",
-    url: env.APP_URL,
+    url: APP_URL,
     areaServed: {
       "@type": "GeoCircle",
       geoMidpoint: {
         "@type": "GeoCoordinates",
-        latitude: env.ANCHOR_LAT,
-        longitude: env.ANCHOR_LNG,
+        latitude: ANCHOR_LAT,
+        longitude: ANCHOR_LNG,
       },
       geoRadius: 16093.4, // 10 miles in meters
     },
@@ -73,8 +78,8 @@ export default function HomePage() {
       "@type": "GeoCircle",
       geoMidpoint: {
         "@type": "GeoCoordinates",
-        latitude: env.ANCHOR_LAT,
-        longitude: env.ANCHOR_LNG,
+        latitude: ANCHOR_LAT,
+        longitude: ANCHOR_LNG,
       },
       geoRadius: 16093.4,
     },
@@ -124,9 +129,9 @@ export default function HomePage() {
 
             <div className="w-full max-w-md md:w-[400px] shrink-0">
               <QuoteFlow
-                turnstileSiteKey={env.TURNSTILE_SITEKEY}
-                privacyVersion={env.PRIVACY_POLICY_VERSION}
-                termsVersion={env.TERMS_VERSION}
+                turnstileSiteKey={TURNSTILE_SITEKEY}
+                privacyVersion={PRIVACY_POLICY_VERSION}
+                termsVersion={TERMS_VERSION}
               />
             </div>
           </div>
