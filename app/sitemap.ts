@@ -1,9 +1,9 @@
 import { MetadataRoute } from "next";
-import { getEnv } from "@/lib/env";
+
+const APP_URL = process.env.APP_URL || "https://poopnscoop.co.uk";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const env = getEnv();
-  const base = env.APP_URL.replace(/\/$/, "");
+  const base = APP_URL.replace(/\/$/, "");
   return [
     { url: `${base}/`, lastModified: new Date() },
     { url: `${base}/pricing`, lastModified: new Date() },

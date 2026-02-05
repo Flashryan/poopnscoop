@@ -1,14 +1,14 @@
 import { MetadataRoute } from "next";
-import { getEnv } from "@/lib/env";
+
+const APP_URL = process.env.APP_URL || "https://poopnscoop.co.uk";
 
 export default function robots(): MetadataRoute.Robots {
-  const env = getEnv();
   return {
     rules: {
       userAgent: "*",
       allow: "/",
       disallow: "/admin",
     },
-    sitemap: `${env.APP_URL.replace(/\/$/, "")}/sitemap.xml`,
+    sitemap: `${APP_URL.replace(/\/$/, "")}/sitemap.xml`,
   };
 }
