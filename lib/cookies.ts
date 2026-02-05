@@ -1,35 +1,71 @@
 import { createHmac, randomUUID } from "crypto";
-import { getEnv } from "@/lib/env";
 
 const ANON_COOKIE = "anon_id";
 const ADMIN_SESSION_COOKIE = "admin_session";
 const ADMIN_CSRF_COOKIE = "admin_csrf";
 
-function signValue(value: string) {
-  const env = getEnv();
-  const signature = createHmac("sha256", env.SESSION_SECRET)
-    .update(value)
-    .digest("hex");
-  return `${value}.${signature}`;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function getSessionSecretOptional() {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 16) return null;
+  return secret;
 }
 
-function verifySignedValue(signed: string) {
+function getSessionSecretRequired() {
+  const secret = getSessionSecretOptional();
+  if (!secret) {
+    throw new Error("SESSION_SECRET must be set (minimum 16 characters).");
+  }
+  return secret;
+}
+
+function isUuid(value: string) {
+  return UUID_REGEX.test(value);
+}
+
+function signatureFor(value: string, secret: string) {
+  return createHmac("sha256", secret).update(value).digest("hex");
+}
+
+function signValue(value: string, secret: string) {
+  return `${value}.${signatureFor(value, secret)}`;
+}
+
+function verifySignedValue(signed: string, secret: string) {
   const parts = signed.split(".");
   if (parts.length < 2) return null;
   const value = parts.slice(0, -1).join(".");
   const signature = parts[parts.length - 1];
-  const expected = signValue(value).split(".").pop();
-  if (!expected || expected !== signature) return null;
+  const expected = signatureFor(value, secret);
+  if (expected !== signature) return null;
   return value;
 }
 
 export function getAnonId(cookieValue?: string | null) {
   if (!cookieValue) return null;
-  return verifySignedValue(cookieValue);
+  if (cookieValue.length > 256) return null;
+
+  const secret = getSessionSecretOptional();
+  if (secret) {
+    const verified = verifySignedValue(cookieValue, secret);
+    if (!verified || !isUuid(verified)) return null;
+    // Return the signed cookie value so rate-limit keys stay stable.
+    return cookieValue;
+  }
+
+  // No secret configured: accept a raw UUID (or the value part of a signed cookie).
+  if (isUuid(cookieValue)) return cookieValue;
+  const valuePart = cookieValue.split(".")[0] ?? "";
+  if (isUuid(valuePart)) return valuePart;
+  return null;
 }
 
 export function createAnonId() {
-  return signValue(randomUUID());
+  const raw = randomUUID();
+  const secret = getSessionSecretOptional();
+  return secret ? signValue(raw, secret) : raw;
 }
 
 export function getAnonCookieName() {
@@ -46,9 +82,12 @@ export function getAdminCsrfCookieName() {
 
 export function verifyAdminCsrfCookie(value?: string | null) {
   if (!value) return null;
-  return verifySignedValue(value);
+  const secret = getSessionSecretOptional();
+  if (!secret) return null;
+  return verifySignedValue(value, secret);
 }
 
 export function signAdminCsrfToken(token: string) {
-  return signValue(token);
+  const secret = getSessionSecretRequired();
+  return signValue(token, secret);
 }

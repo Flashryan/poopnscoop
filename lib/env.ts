@@ -1,10 +1,20 @@
 import { z } from "zod";
 
+const serviceabilityEnvSchema = z.object({
+  // Default: Wolverhampton (UK)
+  ANCHOR_LAT: z.coerce.number().finite().default(52.5862),
+  ANCHOR_LNG: z.coerce.number().finite().default(-2.1279),
+  COVERAGE_RADIUS_MILES: z.coerce.number().finite().default(10),
+  NEEDS_REVIEW_THRESHOLD_MILES: z.coerce.number().finite().default(8),
+});
+
+export type ServiceabilityEnv = z.infer<typeof serviceabilityEnvSchema>;
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   SESSION_SECRET: z.string().min(16),
-  ANCHOR_LAT: z.coerce.number(),
-  ANCHOR_LNG: z.coerce.number(),
+  ANCHOR_LAT: z.coerce.number().finite(),
+  ANCHOR_LNG: z.coerce.number().finite(),
   COVERAGE_RADIUS_MILES: z.coerce.number().default(10),
   NEEDS_REVIEW_THRESHOLD_MILES: z.coerce.number().default(8),
   TURNSTILE_SITEKEY: z.string().min(1),
@@ -29,12 +39,20 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 let cachedEnv: Env | null = null;
+let cachedServiceabilityEnv: ServiceabilityEnv | null = null;
 
 export function getEnv(): Env {
   if (cachedEnv) return cachedEnv;
   const parsed = envSchema.parse(process.env);
   cachedEnv = parsed;
   return cachedEnv;
+}
+
+export function getServiceabilityEnv(): ServiceabilityEnv {
+  if (cachedServiceabilityEnv) return cachedServiceabilityEnv;
+  const parsed = serviceabilityEnvSchema.parse(process.env);
+  cachedServiceabilityEnv = parsed;
+  return cachedServiceabilityEnv;
 }
 
 export function getPublicEnv() {

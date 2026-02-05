@@ -54,9 +54,19 @@ export default function QuoteFlow({
           extra_visits: planType === "subscription" ? extraVisits : 0,
         }),
       });
-      const data = await res.json();
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
       if (!res.ok) {
-        setError(data?.message ?? "Unable to fetch quote.");
+        setError(data?.message ?? `Unable to fetch quote (HTTP ${res.status}).`);
+        setQuote(null);
+        return;
+      }
+      if (!data) {
+        setError("Unable to fetch quote.");
         setQuote(null);
         return;
       }

@@ -1,4 +1,4 @@
-import { getEnv } from "@/lib/env";
+import { getServiceabilityEnv } from "@/lib/env";
 import { haversineMiles } from "@/lib/haversine";
 import {
   getPostcodeFromCache,
@@ -48,7 +48,7 @@ export async function getServiceability(postcodeInput: string) {
     throw new Error("invalid_postcode");
   }
 
-  const env = getEnv();
+  const env = getServiceabilityEnv();
   const cached = await getPostcodeFromCache(normalized);
   let coords: { lat: number; lng: number } | null = cached;
 
