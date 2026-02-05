@@ -3,37 +3,56 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  --color-brand-primary: #1a4f3b; /* Deep Forest Green */
+  --color-brand-highlight: #d4e7c5; /* Soft Lime/Sage */
+  --color-brand-accent: #e67e22; /* Warm Orange for CTAs */
+  --color-bg-cream: #f9f8f4;
+  --color-bg-white: #ffffff;
+  --color-text-main: #1c1c1c;
+  --color-text-muted: #5c5c5c;
 }
 
 body {
-  @apply bg-cream text-ink font-body;
+  @apply bg-[#f9f8f4] text-[#1c1c1c] font-body antialiased;
 }
 
 .gradient-hero {
-  background: radial-gradient(1200px circle at 20% 10%, #d7e7ef 0%, #f7f2ea 45%, #f7f2ea 100%);
+  background: radial-gradient(circle at 50% 0%, #e8f5e9 0%, #f9f8f4 60%);
+}
+
+.gradient-clean {
+  background: linear-gradient(180deg, #ffffff 0%, #f9f8f4 100%);
+}
+
+.section-wrapper {
+  @apply mx-auto max-w-6xl px-6 py-20 md:py-28;
 }
 
 .card {
-  @apply rounded-2xl border border-fog bg-white/80 shadow-sm;
+  @apply rounded-2xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md;
 }
 
 .section-title {
-  @apply font-display text-3xl md:text-4xl tracking-tight;
+  @apply font-display text-4xl md:text-5xl tracking-tight text-[#1a4f3b];
+}
+
+.section-subtitle {
+  @apply mt-4 text-lg md:text-xl text-[#5c5c5c] max-w-2xl leading-relaxed;
 }
 
 .input {
-  @apply w-full rounded-xl border border-fog bg-white px-4 py-3 text-base outline-none ring-0 focus:border-clay;
+  @apply w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-base outline-none ring-0 focus:border-[#1a4f3b] transition-colors placeholder:text-stone-400;
 }
 
 .button-primary {
-  @apply rounded-xl bg-grass px-5 py-3 text-white transition hover:bg-[#144a2f];
+  @apply inline-flex items-center justify-center rounded-xl bg-[#1a4f3b] px-6 py-4 text-base font-medium text-white transition-all hover:bg-[#143d2e] hover:shadow-lg active:scale-95;
 }
 
 .button-secondary {
-  @apply rounded-xl border border-grass px-5 py-3 text-grass transition hover:bg-grass/10;
+  @apply inline-flex items-center justify-center rounded-xl border-2 border-[#1a4f3b] px-6 py-4 text-base font-medium text-[#1a4f3b] transition-all hover:bg-[#1a4f3b]/5 active:scale-95;
 }
 
 .badge {
-  @apply inline-flex items-center rounded-full border border-fog bg-white px-3 py-1 text-sm;
+  @apply inline-flex items-center gap-1.5 rounded-full bg-[#d4e7c5]/30 px-3 py-1 text-sm font-medium text-[#1a4f3b] border border-[#d4e7c5];
 }
+

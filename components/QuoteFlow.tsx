@@ -86,7 +86,7 @@ export default function QuoteFlow({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.message ?? "Unable to submit enquiry.");
+        setError(data?.message || data?.error || "Unable to submit enquiry.");
         return;
       }
       if (data.checkout_url) {
@@ -94,8 +94,8 @@ export default function QuoteFlow({
         return;
       }
       setStatusMessage(data.message ?? "Thanks! We’ll confirm availability.");
-    } catch (err) {
-      setError("Unable to submit enquiry.");
+    } catch (err: any) {
+      setError(err?.message || "Unable to submit enquiry.");
     } finally {
       setLoadingEnquiry(false);
     }
