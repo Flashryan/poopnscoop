@@ -11,6 +11,7 @@ import { sendEmail } from "@/lib/email";
 import {
   businessNotificationEmail,
   customerNeedsReviewEmail,
+  customerOfflinePaymentEmail,
 } from "@/lib/email/templates";
 import { hashIp } from "@/lib/security";
 import { getEnv } from "@/lib/env";
@@ -25,6 +26,7 @@ const schema = z
     notes: z.string().max(500).optional(),
     plan_type: z.enum(["one_off", "subscription"]),
     extra_visits: z.number().int().min(0).max(10),
+    payment_method: z.enum(["online", "bank_transfer", "cash"]),
     consent_gdpr: z.boolean(),
     consent_terms: z.boolean(),
     privacy_policy_version: z.string().min(1),
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
     const serviceability = await getServiceability(parsed.data.postcode);
     if (serviceability.decision === "not_covered") {
       return NextResponse.json(
-        { error: "not_covered", message: "We’re not in your area yet." },
+        { error: "not_covered", message: "We're not in your area yet." },
         { status: 403 }
       );
     }
@@ -129,6 +131,10 @@ export async function POST(request: NextRequest) {
         })
       : null;
 
+    const isOnlinePayment =
+      serviceability.decision === "covered" &&
+      parsed.data.payment_method === "online";
+
     const enquiry = await db.enquiry.create({
       data: {
         plan_type: parsed.data.plan_type,
@@ -151,10 +157,8 @@ export async function POST(request: NextRequest) {
         consented_at: new Date(),
         privacy_policy_version: parsed.data.privacy_policy_version,
         terms_version: parsed.data.terms_version,
-        payment_status:
-          serviceability.decision === "covered"
-            ? "pending_payment"
-            : "not_applicable",
+        payment_method: parsed.data.payment_method,
+        payment_status: isOnlinePayment ? "pending_payment" : "not_applicable",
         ip_hash: ip ? hashIp(ip) : null,
         user_agent: request.headers.get("user-agent"),
         customer_id: customer?.id ?? null,
@@ -162,6 +166,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Needs-review postcodes: send review emails regardless of payment method
     if (serviceability.decision === "needs_review") {
       const customerEmail = parsed.data.email;
       if (customerEmail) {
@@ -185,33 +190,72 @@ export async function POST(request: NextRequest) {
         success: true,
         enquiry_reference: enquiry.id,
         checkout_url: null,
-        message: "Covered — we’ll confirm availability shortly.",
+        message: "Covered — we'll confirm availability shortly.",
       });
       if (limit.isNewAnon) setAnonCookie(response, limit.anonId);
       return response;
     }
 
-    const session = await createCheckoutSession({
-      enquiryId: enquiry.id,
-      planType: parsed.data.plan_type,
-      customerEmail: parsed.data.email ?? null,
-      extraVisits: parsed.data.extra_visits,
-    });
-    if (!session.url) {
-      throw new Error("checkout_url_missing");
+    // Covered + online payment: create Stripe checkout session
+    if (isOnlinePayment) {
+      const session = await createCheckoutSession({
+        enquiryId: enquiry.id,
+        planType: parsed.data.plan_type,
+        customerEmail: parsed.data.email ?? null,
+        extraVisits: parsed.data.extra_visits,
+      });
+      if (!session.url) {
+        throw new Error("checkout_url_missing");
+      }
+
+      await db.enquiry.update({
+        where: { id: enquiry.id },
+        data: {
+          stripe_checkout_session_id: session.id,
+        },
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        enquiry_reference: enquiry.id,
+        checkout_url: session.url,
+      });
+      if (limit.isNewAnon) setAnonCookie(response, limit.anonId);
+      return response;
     }
 
-    await db.enquiry.update({
-      where: { id: enquiry.id },
-      data: {
-        stripe_checkout_session_id: session.id,
-      },
+    // Covered + offline payment (cash or bank transfer): send confirmations
+    const customerEmail = parsed.data.email;
+    if (customerEmail) {
+      const template = customerOfflinePaymentEmail(
+        enquiry,
+        parsed.data.payment_method,
+      );
+      await sendEmail({
+        to: customerEmail,
+        subject: template.subject,
+        text: template.text,
+        html: template.html,
+      });
+    }
+    const businessTemplate = businessNotificationEmail(enquiry);
+    await sendEmail({
+      to: env.BUSINESS_NOTIFY_EMAIL,
+      subject: businessTemplate.subject,
+      text: businessTemplate.text,
+      html: businessTemplate.html,
     });
+
+    const offlineMessage =
+      parsed.data.payment_method === "cash"
+        ? "Booking received — we'll be in touch to arrange your visit."
+        : "Booking received — we'll send bank transfer details shortly.";
 
     const response = NextResponse.json({
       success: true,
       enquiry_reference: enquiry.id,
-      checkout_url: session.url,
+      checkout_url: null,
+      message: offlineMessage,
     });
     if (limit.isNewAnon) setAnonCookie(response, limit.anonId);
     return response;
@@ -227,7 +271,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "lookup_failed",
-          message: "We couldn’t confirm coverage right now. Please try again.",
+          message: "We couldn't confirm coverage right now. Please try again.",
         },
         { status: 503 }
       );

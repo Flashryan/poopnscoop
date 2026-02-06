@@ -17,6 +17,7 @@ export default async function AdminEnquiriesPage() {
       full_name: true,
       postcode: true,
       plan_type: true,
+      payment_method: true,
       payment_status: true,
       lead_status: true,
       created_at: true,

@@ -50,7 +50,8 @@ export default async function AdminEnquiryDetailPage({
           <div className="mt-3 text-sm text-ink/70 space-y-1">
             <p>Plan: {enquiry.plan_type}</p>
             <p>Extra visits: {enquiry.extra_visits}</p>
-            <p>Payment: {enquiry.payment_status}</p>
+            <p>Payment method: {enquiry.payment_method ?? "—"}</p>
+            <p>Payment status: {enquiry.payment_status}</p>
             <p>Decision: {enquiry.serviceability_decision}</p>
           </div>
           <AdminStatusForm

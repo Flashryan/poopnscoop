@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import EnquiryForm, { EnquiryPayload } from "@/components/EnquiryForm";
+import PaymentMethodSelector, {
+  PaymentMethodOption,
+} from "@/components/PaymentMethodSelector";
 import { PlanType } from "@/lib/quote";
 
 type QuoteResponse = {
@@ -33,6 +36,14 @@ export default function QuoteFlow({
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [loadingEnquiry, setLoadingEnquiry] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Payment method step state
+  const [pendingPayload, setPendingPayload] = useState<EnquiryPayload | null>(
+    null,
+  );
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethodOption | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
 
   async function fetchQuote() {
     setLoadingQuote(true);
@@ -73,8 +84,8 @@ export default function QuoteFlow({
       setQuote(data);
       setDecisionMessage(
         data.decision === "needs_review"
-          ? "Covered — we’ll confirm availability shortly."
-          : "Great news — you’re covered."
+          ? "Covered — we'll confirm availability shortly."
+          : "Great news — you're covered.",
       );
     } catch (err) {
       setError("Unable to fetch quote.");
@@ -84,7 +95,8 @@ export default function QuoteFlow({
     }
   }
 
-  async function submitEnquiry(payload: EnquiryPayload) {
+  async function submitEnquiry() {
+    if (!pendingPayload || !paymentMethod) return;
     setLoadingEnquiry(true);
     setError(null);
     setStatusMessage(null);
@@ -92,7 +104,10 @@ export default function QuoteFlow({
       const res = await fetch("/api/enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...pendingPayload,
+          payment_method: paymentMethod,
+        }),
       });
       let data: any = null;
       try {
@@ -104,7 +119,7 @@ export default function QuoteFlow({
         setError(
           data?.message ||
             data?.error ||
-            `Unable to submit enquiry (HTTP ${res.status}).`
+            `Unable to submit enquiry (HTTP ${res.status}).`,
         );
         return;
       }
@@ -116,12 +131,43 @@ export default function QuoteFlow({
         window.location.href = data.checkout_url;
         return;
       }
-      setStatusMessage(data.message ?? "Thanks! We’ll confirm availability.");
+      setConfirmed(true);
+      setStatusMessage(data.message ?? "Thanks! We'll be in touch shortly.");
     } catch (err: any) {
       setError(err?.message || "Unable to submit enquiry.");
     } finally {
       setLoadingEnquiry(false);
     }
+  }
+
+  // After successful non-Stripe submission, show confirmation
+  if (confirmed && statusMessage) {
+    return (
+      <div className="card p-6">
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#d4e7c5]">
+            <span className="text-3xl">✓</span>
+          </div>
+          <h2 className="font-display text-2xl text-[#1a4f3b]">
+            Booking received
+          </h2>
+          <p className="mt-3 text-[#5c5c5c]">{statusMessage}</p>
+          {paymentMethod === "cash" && (
+            <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm text-[#5c5c5c]">
+              <strong>Next steps:</strong> We&rsquo;ll contact you to schedule
+              your visit. Payment will be collected in cash on the day of
+              service.
+            </div>
+          )}
+          {paymentMethod === "bank_transfer" && (
+            <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm text-[#5c5c5c]">
+              <strong>Next steps:</strong> We&rsquo;ll send you our bank
+              transfer details by email or text shortly.
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -169,7 +215,7 @@ export default function QuoteFlow({
               value={extraVisits}
               onChange={(event) =>
                 setExtraVisits(
-                  Math.min(10, Math.max(0, Number(event.target.value)))
+                  Math.min(10, Math.max(0, Number(event.target.value))),
                 )
               }
             />
@@ -192,7 +238,8 @@ export default function QuoteFlow({
           <div className="rounded-xl border border-fog bg-white p-4 text-sm">
             <div className="font-display text-lg">£{quote.total_price}</div>
             <div className="text-ink/70">
-              Base £{quote.breakdown.base_price} · Extras £{quote.breakdown.extras_price}
+              Base £{quote.breakdown.base_price} · Extras £
+              {quote.breakdown.extras_price}
             </div>
             <div className="mt-2 text-ink/70">{quote.display_copy.headline}</div>
             {quote.display_copy.extras && (
@@ -201,13 +248,15 @@ export default function QuoteFlow({
           </div>
         )}
         {error && <div className="text-sm text-red-600">{error}</div>}
-        {statusMessage && (
+        {statusMessage && !confirmed && (
           <div className="rounded-xl bg-grass/10 px-4 py-3 text-sm">
             {statusMessage}
           </div>
         )}
       </div>
-      {quote && (
+
+      {/* Step 2: Enquiry form (shown after quote, hidden after form submitted) */}
+      {quote && !pendingPayload && (
         <EnquiryForm
           postcode={postcode}
           planType={planType}
@@ -215,7 +264,19 @@ export default function QuoteFlow({
           turnstileSiteKey={turnstileSiteKey}
           privacyVersion={privacyVersion}
           termsVersion={termsVersion}
-          onSubmit={submitEnquiry}
+          onSubmit={async (payload) => {
+            setPendingPayload(payload);
+          }}
+          loading={false}
+        />
+      )}
+
+      {/* Step 3: Payment method selection (shown after form submitted) */}
+      {pendingPayload && !confirmed && (
+        <PaymentMethodSelector
+          selected={paymentMethod}
+          onSelect={setPaymentMethod}
+          onConfirm={submitEnquiry}
           loading={loadingEnquiry}
         />
       )}

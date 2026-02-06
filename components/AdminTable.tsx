@@ -7,6 +7,7 @@ export type EnquiryRow = {
   full_name: string;
   postcode: string;
   plan_type: string;
+  payment_method: string | null;
   payment_status: string;
   lead_status: string;
   created_at: string;
@@ -56,6 +57,7 @@ export default function AdminTable({ enquiries, csrfToken }: Props) {
               <th className="py-2">Name</th>
               <th className="py-2">Postcode</th>
               <th className="py-2">Plan</th>
+              <th className="py-2">Method</th>
               <th className="py-2">Payment</th>
               <th className="py-2">Lead status</th>
               <th className="py-2">Actions</th>
@@ -70,6 +72,7 @@ export default function AdminTable({ enquiries, csrfToken }: Props) {
                 <td className="py-3">{row.full_name}</td>
                 <td className="py-3">{row.postcode}</td>
                 <td className="py-3">{row.plan_type}</td>
+                <td className="py-3">{row.payment_method ?? "—"}</td>
                 <td className="py-3">{row.payment_status}</td>
                 <td className="py-3">
                   <select

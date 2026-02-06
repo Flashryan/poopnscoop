@@ -1,4 +1,11 @@
+import { Metadata } from "next";
 import QuoteFlow from "@/components/QuoteFlow";
+
+export const metadata: Metadata = {
+  title: "Dog Waste Removal Wolverhampton | Poop n Scoop",
+  description:
+    "Professional dog waste removal and garden sanitisation in Wolverhampton. One-off visits from \u00a315, monthly plans from \u00a330. Sanitisation included. Book online in 2 minutes.",
+};
 
 // Use process.env directly to avoid validation timeout during static build
 const APP_URL = process.env.APP_URL || "https://poopnscoop.co.uk";
@@ -45,10 +52,10 @@ export default function HomePage() {
     mainEntity: [
       {
         "@type": "Question",
-        name: "How much is dog waste removal?",
+        name: "How much does dog waste removal cost in Wolverhampton?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "One-off visits are £15. Subscriptions are £30/month and include two visits per 30-day cycle.",
+          text: "A one-off garden clear costs \u00a315. Our monthly subscription is \u00a330 and includes two visits every 30 days. Extra visits are \u00a315 each. Sanitisation and deodorising are included at no extra cost.",
         },
       },
       {
@@ -56,15 +63,31 @@ export default function HomePage() {
         name: "Do you cover my postcode?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "We cover Wolverhampton within a 10-mile radius. Enter your postcode to check instantly.",
+          text: "We cover Wolverhampton and surrounding areas within a 10-mile radius, including Tettenhall, Penn, Wednesfield, Bilston, Willenhall, Sedgley, and parts of Dudley, Walsall, and West Bromwich. Enter your postcode to check instantly.",
         },
       },
       {
         "@type": "Question",
-        name: "What’s included in the subscription?",
+        name: "What\u2019s included in a dog waste removal visit?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "The subscription includes two visits every 30 days. Extra visits are £15 each.",
+          text: "Every visit includes a full garden clear of all dog waste, treatment with veterinary-grade disinfectant, deodorising spray, and removal of all waste from your property. We double-bag everything and take it away.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What payment methods do you accept?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "We accept cash, bank transfer, and secure online card payment via Stripe. You choose your preferred payment method when you book.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Do I need to be home for the visit?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. As long as we can access your garden, you don\u2019t need to be home. Many of our customers are at work during visits.",
         },
       },
     ],
@@ -225,6 +248,29 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* HOW IT WORKS */}
+      <section className="section-wrapper bg-white">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="section-title">How It Works</h2>
+          <p className="section-subtitle">Three simple steps to a cleaner, safer garden.</p>
+        </div>
+        <div className="grid gap-8 md:grid-cols-3">
+          {[
+            { step: "1", title: "Get a Quote", text: "Enter your postcode and choose your plan. We\u2019ll confirm coverage and pricing instantly \u2014 it takes less than a minute." },
+            { step: "2", title: "We Visit & Scoop", text: "We come to your garden and clear every piece of dog waste. You don\u2019t need to be home \u2014 just ensure we can access the garden." },
+            { step: "3", title: "We Sanitise", text: "We treat affected areas with veterinary-grade disinfectant, apply a deodorising spray, then double-bag and remove all waste from your property." },
+          ].map((item) => (
+            <div key={item.step} className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1a4f3b] text-xl font-bold text-white">
+                {item.step}
+              </div>
+              <h3 className="font-display text-xl font-semibold text-[#1a4f3b]">{item.title}</h3>
+              <p className="mt-3 text-[#5c5c5c] leading-relaxed">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* BENEFIT / CONVENIENCE SECTION */}
       <section className="section-wrapper bg-[#f9f8f4]" id="quote">
         <div className="card bg-white p-12 md:p-16 text-center">
@@ -248,6 +294,38 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* WHY CHOOSE US */}
+      <section className="section-wrapper bg-white">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="section-title">Why Choose Poop n Scoop</h2>
+          <p className="section-subtitle">We&rsquo;re not just another dog waste removal service. Here&rsquo;s what sets us apart.</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {[
+            { title: "Local Wolverhampton Business", text: "We\u2019re based in Wolverhampton and know the area inside out. You\u2019re dealing with us directly, not a faceless franchise." },
+            { title: "Sanitisation Included", text: "Every visit includes veterinary-grade disinfectant and deodorising spray at no extra cost. Most services just pick up and leave." },
+            { title: "Flexible Payment Options", text: "Pay by cash, bank transfer, or secure online card payment. Choose what works best for you \u2014 no extra charges either way." },
+            { title: "No Contracts, No Lock-In", text: "Our monthly subscription can be cancelled any time. One-off visits have zero commitment. We earn your business every visit." },
+          ].map((item) => (
+            <div key={item.title} className="card p-6">
+              <h3 className="font-display text-lg font-semibold text-[#1a4f3b]">{item.title}</h3>
+              <p className="mt-3 text-[#5c5c5c] leading-relaxed">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* LOCAL AREA */}
+      <section className="bg-stone-50 py-12">
+        <div className="mx-auto max-w-6xl px-6 text-center">
+          <h2 className="font-display text-2xl text-[#1a4f3b]">Serving Wolverhampton &amp; the West Midlands</h2>
+          <p className="mt-4 text-[#5c5c5c] leading-relaxed max-w-3xl mx-auto">
+            Proudly serving Wolverhampton, Tettenhall, Penn, Wednesfield, Bilston, Willenhall, Sedgley, Coseley, Fordhouses, Bushbury, and surrounding areas across the West Midlands including parts of Dudley, Walsall, and West Bromwich. <a href="/service-area" className="text-[#1a4f3b] underline">View our full service area</a>.
+          </p>
+        </div>
+      </section>
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}

@@ -17,9 +17,12 @@ const body = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Poop n Scoop | Wolverhampton",
+  title: {
+    default: "Dog Waste Removal Wolverhampton | Poop n Scoop",
+    template: "%s | Poop n Scoop Wolverhampton",
+  },
   description:
-    "Fast, friendly dog waste removal in Wolverhampton. Instant quotes, flexible plans, and honest coverage checks.",
+    "Professional dog waste removal and garden sanitisation in Wolverhampton. One-off visits from \u00a315, monthly plans from \u00a330. Serving WV postcodes and surrounding areas within 10 miles.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -47,6 +50,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </a>
                 <a href="/faq" className="hover:text-grass">
                   FAQ
+                </a>
+                <a href="/about" className="hover:text-grass">
+                  About
                 </a>
                 <a href="/contact" className="hover:text-grass">
                   Contact

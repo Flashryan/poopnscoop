@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/enquiry/route";
 
-const createMock = vi.fn();
-const updateMock = vi.fn();
-const upsertMock = vi.fn();
+const { createMock, updateMock, upsertMock } = vi.hoisted(() => ({
+  createMock: vi.fn(),
+  updateMock: vi.fn(),
+  upsertMock: vi.fn(),
+}));
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -54,6 +56,21 @@ function makeRequest(body: any) {
   });
 }
 
+const validBody = {
+  full_name: "Test User",
+  house_identifier: "12",
+  postcode: "WV1 1AA",
+  email: "test@example.com",
+  plan_type: "one_off",
+  extra_visits: 0,
+  payment_method: "online",
+  consent_gdpr: true,
+  consent_terms: true,
+  privacy_policy_version: "v1",
+  terms_version: "v1",
+  turnstile_token: "token",
+};
+
 beforeEach(() => {
   createMock.mockResolvedValue({
     id: "enq_1",
@@ -61,6 +78,7 @@ beforeEach(() => {
     postcode: "WV1 1AA",
     serviceability_decision: "covered",
     payment_status: "pending_payment",
+    payment_method: "online",
   });
   updateMock.mockResolvedValue({});
   upsertMock.mockResolvedValue({ id: "cust_1" });
@@ -69,76 +87,26 @@ beforeEach(() => {
 describe("POST /api/enquiry", () => {
   it("requires house identifier", async () => {
     const res = await POST(
-      makeRequest({
-        full_name: "Test User",
-        house_identifier: "",
-        postcode: "WV1 1AA",
-        email: "test@example.com",
-        plan_type: "one_off",
-        extra_visits: 0,
-        consent_gdpr: true,
-        consent_terms: true,
-        privacy_policy_version: "v1",
-        terms_version: "v1",
-        turnstile_token: "token",
-      })
+      makeRequest({ ...validBody, house_identifier: "" }),
     );
     expect(res.status).toBe(400);
   });
 
   it("requires email or phone", async () => {
-    const res = await POST(
-      makeRequest({
-        full_name: "Test User",
-        house_identifier: "12",
-        postcode: "WV1 1AA",
-        plan_type: "one_off",
-        extra_visits: 0,
-        consent_gdpr: true,
-        consent_terms: true,
-        privacy_policy_version: "v1",
-        terms_version: "v1",
-        turnstile_token: "token",
-      })
-    );
+    const { email, ...noEmail } = validBody;
+    const res = await POST(makeRequest(noEmail));
     expect(res.status).toBe(400);
   });
 
   it("requires consents", async () => {
     const res = await POST(
-      makeRequest({
-        full_name: "Test User",
-        house_identifier: "12",
-        postcode: "WV1 1AA",
-        email: "test@example.com",
-        plan_type: "one_off",
-        extra_visits: 0,
-        consent_gdpr: false,
-        consent_terms: true,
-        privacy_policy_version: "v1",
-        terms_version: "v1",
-        turnstile_token: "token",
-      })
+      makeRequest({ ...validBody, consent_gdpr: false }),
     );
     expect(res.status).toBe(400);
   });
 
-  it("accepts valid enquiry and returns checkout", async () => {
-    const res = await POST(
-      makeRequest({
-        full_name: "Test User",
-        house_identifier: "12",
-        postcode: "WV1 1AA",
-        email: "test@example.com",
-        plan_type: "one_off",
-        extra_visits: 0,
-        consent_gdpr: true,
-        consent_terms: true,
-        privacy_policy_version: "v1",
-        terms_version: "v1",
-        turnstile_token: "token",
-      })
-    );
+  it("accepts valid enquiry with online payment and returns checkout", async () => {
+    const res = await POST(makeRequest(validBody));
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data.checkout_url).toBe("https://checkout.test/session");
@@ -146,21 +114,57 @@ describe("POST /api/enquiry", () => {
 
   it("rejects unknown fields", async () => {
     const res = await POST(
-      makeRequest({
-        full_name: "Test User",
-        house_identifier: "12",
-        postcode: "WV1 1AA",
-        email: "test@example.com",
-        plan_type: "one_off",
-        extra_visits: 0,
-        consent_gdpr: true,
-        consent_terms: true,
-        privacy_policy_version: "v1",
-        terms_version: "v1",
-        turnstile_token: "token",
-        quoted_total_price: 999,
-      })
+      makeRequest({ ...validBody, quoted_total_price: 999 }),
     );
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts cash payment and returns no checkout_url", async () => {
+    createMock.mockResolvedValue({
+      id: "enq_2",
+      full_name: "Cash User",
+      postcode: "WV1 1AA",
+      serviceability_decision: "covered",
+      payment_status: "not_applicable",
+      payment_method: "cash",
+    });
+    const res = await POST(
+      makeRequest({ ...validBody, payment_method: "cash" }),
+    );
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.checkout_url).toBeNull();
+    expect(data.message).toContain("Booking received");
+  });
+
+  it("accepts bank_transfer payment and returns no checkout_url", async () => {
+    createMock.mockResolvedValue({
+      id: "enq_3",
+      full_name: "Transfer User",
+      postcode: "WV1 1AA",
+      serviceability_decision: "covered",
+      payment_status: "not_applicable",
+      payment_method: "bank_transfer",
+    });
+    const res = await POST(
+      makeRequest({ ...validBody, payment_method: "bank_transfer" }),
+    );
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.checkout_url).toBeNull();
+    expect(data.message).toContain("bank transfer");
+  });
+
+  it("rejects invalid payment_method", async () => {
+    const res = await POST(
+      makeRequest({ ...validBody, payment_method: "bitcoin" }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("requires payment_method field", async () => {
+    const { payment_method, ...noMethod } = validBody;
+    const res = await POST(makeRequest(noMethod));
     expect(res.status).toBe(400);
   });
 });

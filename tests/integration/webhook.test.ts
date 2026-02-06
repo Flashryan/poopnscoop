@@ -2,10 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/webhooks/stripe/route";
 
-const findUniqueMock = vi.fn();
-const createEventMock = vi.fn();
-const findFirstMock = vi.fn();
-const updateMock = vi.fn();
+const { findUniqueMock, createEventMock, findFirstMock, updateMock } =
+  vi.hoisted(() => ({
+    findUniqueMock: vi.fn(),
+    createEventMock: vi.fn(),
+    findFirstMock: vi.fn(),
+    updateMock: vi.fn(),
+  }));
 
 vi.mock("@/lib/db", () => ({
   db: {
