@@ -94,9 +94,22 @@ export default function QuoteFlow({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
       if (!res.ok) {
-        setError(data?.message || data?.error || "Unable to submit enquiry.");
+        setError(
+          data?.message ||
+            data?.error ||
+            `Unable to submit enquiry (HTTP ${res.status}).`
+        );
+        return;
+      }
+      if (!data) {
+        setError("Unable to submit enquiry.");
         return;
       }
       if (data.checkout_url) {

@@ -166,6 +166,11 @@ export default function EnquiryForm({
         siteKey={turnstileSiteKey}
         onVerify={setTurnstileToken}
       />
+      {!turnstileToken && (
+        <div className="text-xs text-ink/70">
+          Complete the security check to enable submit.
+        </div>
+      )}
       <button className="button-primary" type="submit" disabled={!canSubmit}>
         {loading ? "Submitting..." : "Submit enquiry"}
       </button>

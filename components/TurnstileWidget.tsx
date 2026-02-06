@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
 type Props = {
   siteKey: string;
@@ -30,6 +30,7 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
   const trimmedSiteKey = siteKey.trim();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const [widgetError, setWidgetError] = useState<string | null>(null);
 
   const handleVerify = useCallback(
     (token: string) => {
@@ -46,6 +47,7 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
       );
       return;
     }
+    setWidgetError(null);
 
     const renderWidget = () => {
       if (!containerRef.current || !window.turnstile) return;
@@ -57,14 +59,23 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
           callback: handleVerify,
           "error-callback": () => {
             console.error("Turnstile error");
+            handleVerify("");
+            setWidgetError(
+              "Security check failed to load. Please refresh and try again."
+            );
           },
           "expired-callback": () => {
             console.warn("Turnstile token expired");
+            handleVerify("");
           },
           theme: "light",
         });
       } catch (err) {
         console.error("Turnstile render failed", err);
+        handleVerify("");
+        setWidgetError(
+          "Security check failed to load. Please refresh and try again."
+        );
       }
     };
 
@@ -107,5 +118,10 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
     );
   }
 
-  return <div ref={containerRef} />;
+  return (
+    <div>
+      <div ref={containerRef} />
+      {widgetError && <div className="mt-2 text-xs text-red-600">{widgetError}</div>}
+    </div>
+  );
 }
