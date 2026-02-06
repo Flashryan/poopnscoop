@@ -27,6 +27,7 @@ declare global {
 }
 
 export default function TurnstileWidget({ siteKey, onVerify }: Props) {
+  const trimmedSiteKey = siteKey.trim();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
@@ -38,21 +39,33 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
   );
 
   useEffect(() => {
+    if (!trimmedSiteKey) {
+      // Avoid throwing inside Cloudflare's script when the sitekey is missing.
+      console.error(
+        '[Turnstile] Missing sitekey. Set the TURNSTILE_SITEKEY environment variable for this deployment.'
+      );
+      return;
+    }
+
     const renderWidget = () => {
       if (!containerRef.current || !window.turnstile) return;
       if (widgetIdRef.current) return; // Already rendered
 
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        callback: handleVerify,
-        "error-callback": () => {
-          console.error("Turnstile error");
-        },
-        "expired-callback": () => {
-          console.warn("Turnstile token expired");
-        },
-        theme: "light",
-      });
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: trimmedSiteKey,
+          callback: handleVerify,
+          "error-callback": () => {
+            console.error("Turnstile error");
+          },
+          "expired-callback": () => {
+            console.warn("Turnstile token expired");
+          },
+          theme: "light",
+        });
+      } catch (err) {
+        console.error("Turnstile render failed", err);
+      }
     };
 
     // If turnstile is already loaded, render immediately
@@ -84,7 +97,15 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
         widgetIdRef.current = null;
       }
     };
-  }, [siteKey, handleVerify]);
+  }, [trimmedSiteKey, handleVerify]);
+
+  if (!trimmedSiteKey) {
+    return (
+      <div className="rounded-xl border border-fog bg-white p-3 text-sm text-ink/70">
+        Security check is temporarily unavailable. Please try again later.
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="cf-turnstile" />;
 }
