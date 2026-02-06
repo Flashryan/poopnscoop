@@ -27,7 +27,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body>
         <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          // We render the widget explicitly via window.turnstile.render(...).
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
           async
           defer
         />

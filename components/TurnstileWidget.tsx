@@ -107,5 +107,5 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
     );
   }
 
-  return <div ref={containerRef} className="cf-turnstile" />;
+  return <div ref={containerRef} />;
 }
