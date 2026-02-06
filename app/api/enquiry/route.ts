@@ -92,8 +92,20 @@ export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
   const turnstile = await verifyTurnstile(parsed.data.turnstile_token, ip);
   if (!turnstile.success) {
+    const code = turnstile.error;
+    let message = "Security check failed. Please try again.";
+    if (code === "timeout-or-duplicate") {
+      message = "Security check expired. Please complete it again.";
+    } else if (
+      code === "missing-input-secret" ||
+      code === "invalid-input-secret"
+    ) {
+      message = "Security check is misconfigured. Please contact support.";
+    } else if (code === "missing-input-response") {
+      message = "Please complete the security check.";
+    }
     return NextResponse.json(
-      { error: "spam_detected", message: "Turnstile verification failed." },
+      { error: "spam_detected", message, turnstile_error: code },
       { status: 422 }
     );
   }

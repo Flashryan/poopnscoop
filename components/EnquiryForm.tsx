@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { PlanType } from "@/lib/quote";
 
@@ -30,6 +30,7 @@ type Props = {
   termsVersion: string;
   onSubmit: (payload: EnquiryPayload) => Promise<void>;
   loading?: boolean;
+  turnstileResetKey?: number;
 };
 
 export default function EnquiryForm({
@@ -41,6 +42,7 @@ export default function EnquiryForm({
   termsVersion,
   onSubmit,
   loading,
+  turnstileResetKey = 0,
 }: Props) {
   const [fullName, setFullName] = useState("");
   const [houseIdentifier, setHouseIdentifier] = useState("");
@@ -51,6 +53,10 @@ export default function EnquiryForm({
   const [consentTerms, setConsentTerms] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [honeypot, setHoneypot] = useState("");
+
+  useEffect(() => {
+    setTurnstileToken("");
+  }, [turnstileResetKey]);
 
   const hasContact = Boolean(email.trim() || phone.trim());
   const canSubmit =
@@ -163,6 +169,7 @@ export default function EnquiryForm({
         </label>
       </div>
       <TurnstileWidget
+        key={turnstileResetKey}
         siteKey={turnstileSiteKey}
         onVerify={setTurnstileToken}
       />

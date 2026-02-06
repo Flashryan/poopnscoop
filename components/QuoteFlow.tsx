@@ -33,6 +33,7 @@ export default function QuoteFlow({
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [loadingEnquiry, setLoadingEnquiry] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   async function fetchQuote() {
     setLoadingQuote(true);
@@ -101,6 +102,12 @@ export default function QuoteFlow({
         data = null;
       }
       if (!res.ok) {
+        if (
+          data?.error === "spam_detected" &&
+          typeof data?.turnstile_error === "string"
+        ) {
+          setTurnstileResetKey((value) => value + 1);
+        }
         setError(
           data?.message ||
             data?.error ||
@@ -217,6 +224,7 @@ export default function QuoteFlow({
           termsVersion={termsVersion}
           onSubmit={submitEnquiry}
           loading={loadingEnquiry}
+          turnstileResetKey={turnstileResetKey}
         />
       )}
     </div>

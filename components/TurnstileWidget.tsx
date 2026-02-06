@@ -63,10 +63,16 @@ export default function TurnstileWidget({ siteKey, onVerify }: Props) {
             setWidgetError(
               "Security check failed to load. Please refresh and try again."
             );
+            if (widgetIdRef.current && window.turnstile) {
+              window.turnstile.reset(widgetIdRef.current);
+            }
           },
           "expired-callback": () => {
             console.warn("Turnstile token expired");
             handleVerify("");
+            if (widgetIdRef.current && window.turnstile) {
+              window.turnstile.reset(widgetIdRef.current);
+            }
           },
           theme: "light",
         });
